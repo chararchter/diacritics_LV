@@ -30,21 +30,20 @@ def clean_names(df: pd.DataFrame) -> pd.DataFrame:
     return df[df["has_letters"]]
 
 
-def main():
-    df = read_csv("vardi-20260101.csv")
+def compute_diacritics_percentage(filepath: str) -> float:
+    df = read_csv(filepath)
     df = clean_names(df)
     df["has_diacritics"] = df["Vardi"].apply(has_diacritics)
 
     with_diacritics = df.loc[df["has_diacritics"], "Skaits"].sum()
-    without_diacritics = df.loc[~df["has_diacritics"], "Skaits"].sum()
     total = df["Skaits"].sum()
 
-    diacritics_percentage = with_diacritics/total*100
+    return with_diacritics/total*100
 
-    print(f"With diacritics: {with_diacritics}")
-    print(f"Without diacritics: {without_diacritics}")
-    print(f"Total: {total}")
-    print(diacritics_percentage)
+
+def main():
+    x = compute_diacritics_percentage("vardi-20260101.csv")
+    print(x)
 
 
 if __name__ == "__main__":
