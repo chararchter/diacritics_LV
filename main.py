@@ -1,10 +1,21 @@
+from pathlib import Path
 from pandas.core.frame import DataFrame
 import pandas as pd
 import regex
+import re
+from datetime import datetime
 
 
 def read_csv(filepath: str) -> pd.DataFrame:
     return pd.read_csv(filepath, encoding="utf-8")
+
+
+def extract_date(filename: str):
+    match = re.search(r"vardi-(\d{8})\.csv$", filename)
+    if not match:
+        return None
+
+    return datetime.strptime(match.group(1), "%Y%m%d").date()
 
 def has_letters(value: str) -> bool:
     """Return True if the value contains at least one Unicode letter."""
@@ -38,12 +49,45 @@ def compute_diacritics_percentage(filepath: str) -> float:
     with_diacritics = df.loc[df["has_diacritics"], "Skaits"].sum()
     total = df["Skaits"].sum()
 
-    return with_diacritics/total*100
+    return with_diacritics*100/total
 
 
 def main():
-    x = compute_diacritics_percentage("vardi-20260101.csv")
-    print(x)
+    # x = compute_diacritics_percentage("vardi-20260101.csv")
+    # print(x)
+
+    data_dir = Path("personu_vardi_data")
+    pattern = re.compile(r"vardi-\d{8}\.csv$")
+    results = []
+
+    files = sorted([
+        f for f in data_dir.iterdir()
+        if f.is_file() and pattern.match(f.name)
+    ])
+
+    for file in files:
+        print(file)
+        date = extract_date(file.name)
+        print(date)
+        if date is None:
+            continue
+
+        print(f"Processing {file.name}")
+
+        diacritics_percentage = compute_diacritics_percentage(str(file))
+
+        results.append({
+            "date": date,
+            "diacritics_percentage": diacritics_percentage
+        })
+
+    results_file = Path("results.csv")
+
+
+    result_df = pd.DataFrame(results)
+    result_df = result_df[["date", "diacritics_percentage"]]
+    result_df = result_df.sort_values("date")
+    result_df.to_csv(results_file, index=False)
 
 
 if __name__ == "__main__":
